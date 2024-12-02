@@ -6,7 +6,7 @@ import com.gregtechceu.gtceu.api.capability.ICoverable;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
 import com.gregtechceu.gtceu.api.item.PipeBlockItem;
 import com.gregtechceu.gtceu.api.item.tool.GTToolType;
-import com.gregtechceu.gtceu.api.item.tool.IToolGridHighLight;
+import com.gregtechceu.gtceu.api.item.tool.IToolGridHighlight;
 import com.gregtechceu.gtceu.api.item.tool.ToolHelper;
 import com.gregtechceu.gtceu.api.pipenet.IPipeType;
 import com.gregtechceu.gtceu.common.item.CoverPlaceBehavior;
@@ -47,12 +47,12 @@ import java.util.function.Function;
 /**
  * @author KilaBash
  * @date 2023/2/24
- * @implNote BlockHighLightRenderer
+ * @implNote BlockHighlightRenderer
  */
 @OnlyIn(Dist.CLIENT)
-public class BlockHighLightRenderer {
+public class BlockHighlightRenderer {
 
-    public static void renderBlockHighLight(PoseStack poseStack, Camera camera, BlockHitResult target,
+    public static void renderBlockHighlight(PoseStack poseStack, Camera camera, BlockHitResult target,
                                             MultiBufferSource multiBufferSource, float partialTick) {
         var mc = Minecraft.getInstance();
         var level = mc.level;
@@ -65,16 +65,16 @@ public class BlockHighLightRenderer {
             BlockEntity blockEntity = level.getBlockEntity(blockPos);
 
             // draw tool grid highlight
-            if (!toolType.isEmpty()) {
-                IToolGridHighLight gridHighLight = null;
-                if (blockEntity instanceof IToolGridHighLight highLight) {
-                    gridHighLight = highLight;
-                } else if (level.getBlockState(blockPos).getBlock() instanceof IToolGridHighLight highLight) {
-                    gridHighLight = highLight;
+            if ((!toolType.isEmpty()) || (held.isEmpty() && player.isShiftKeyDown())) {
+                IToolGridHighlight gridHighlight = null;
+                if (blockEntity instanceof IToolGridHighlight highLight) {
+                    gridHighlight = highLight;
+                } else if (level.getBlockState(blockPos).getBlock() instanceof IToolGridHighlight highLight) {
+                    gridHighlight = highLight;
                 } else if (toolType.contains(GTToolType.WRENCH)) {
                     var behavior = CustomBlockRotations.getCustomRotation(level.getBlockState(blockPos).getBlock());
                     if (behavior != null && behavior.showGrid()) {
-                        gridHighLight = new IToolGridHighLight() {
+                        gridHighlight = new IToolGridHighlight() {
 
                             @Override
                             public ResourceTexture sideTips(Player player, BlockPos pos, BlockState state,
@@ -85,22 +85,22 @@ public class BlockHighLightRenderer {
                         };
                     }
                 }
-                if (gridHighLight == null) {
+                if (gridHighlight == null) {
                     return;
                 }
                 var state = level.getBlockState(blockPos);
                 Vec3 pos = camera.getPosition();
                 poseStack.pushPose();
                 poseStack.translate(-pos.x, -pos.y, -pos.z);
-                if (gridHighLight.shouldRenderGrid(player, blockPos, state, held, toolType)) {
+                if (gridHighlight.shouldRenderGrid(player, blockPos, state, held, toolType)) {
                     var buffer = multiBufferSource.getBuffer(RenderType.lines());
                     RenderSystem.lineWidth(3);
-                    final IToolGridHighLight finalGridHighLight = gridHighLight;
+                    final IToolGridHighlight finalGridHighlight = gridHighlight;
                     drawGridOverlays(poseStack, buffer, target,
-                            side -> finalGridHighLight.sideTips(player, blockPos, state, toolType, side));
+                            side -> finalGridHighlight.sideTips(player, blockPos, state, toolType, side));
                 } else {
                     var facing = target.getDirection();
-                    var texture = gridHighLight.sideTips(player, blockPos, state, toolType, facing);
+                    var texture = gridHighlight.sideTips(player, blockPos, state, toolType, facing);
                     if (texture != null) {
                         RenderSystem.disableDepthTest();
                         RenderSystem.enableBlend();
